@@ -1,0 +1,42 @@
+{
+  "name": "tattoo-tryon",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tattoo placement preview: try a 6 in design on arm photos at real scale, then save a picture and the artist files.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "payload": "node scripts/make-payload.mjs --synthetic",
+    "build": "node scripts/build.mjs",
+    "build:real": "node scripts/build.mjs --real",
+    "preview": "vite preview --port 4173 --strictPort",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint --max-warnings 0 .",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "mutants": "node scripts/mutants.mjs",
+    "stryker": "stryker run",
+    "verify": "npm run typecheck && npm run lint && npm run test && npm run build && npm run size-budget && npm run e2e",
+    "size-budget": "node scripts/size-budget.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.63.0",
+    "@stryker-mutator/core": "10.1.1",
+    "@stryker-mutator/vitest-runner": "10.1.1",
+    "@types/node": "22.20.5",
+    "eslint": "10.12.0",
+    "fast-check": "4.10.2",
+    "globals": "17.13.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.4",
+    "vite-plugin-pwa": "2.0.0",
+    "vitest": "5.0.5"
+  },
+  "overrides": {
+    "playwright-core": "1.63.0"
+  }
+}

@@ -1,0 +1,12 @@
+# Never committed. private/ holds the real build settings; .payload/ the plain (unsealed) payloads and the synthetic
+# test files; public/payload.bin is a build product (sealed, but rebuilt every time).
+node_modules/
+dist/
+private/
+.payload/
+public/payload.bin
+public/payload.json
+reports/
+test-results/
+.mutants/
+.stryker-tmp/

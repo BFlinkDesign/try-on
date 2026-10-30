@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Tattoo Placement Preview</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="./src/styles.css">
+<script type="module" src="./src/main.js"></script>
+</head>
+<body>
+<h1>Try the tattoo on</h1>
+<section class="gate" id="gate" aria-label="Opening the page">
+  <p class="note" id="loadNote" role="status">Loading the photo and the design…</p>
+  <div class="gate-screen" id="gateNoKey" hidden>
+    <h2>This page needs the full link you were sent.</h2>
+    <p class="sub">Open that link again, or paste it here.</p>
+  </div>
+  <div class="gate-screen" id="gateOld" hidden>
+    <h2>This link is from an older version. Ask for the current link.</h2>
+    <p class="sub">When you have it, open it or paste it here.</p>
+  </div>
+  <form class="key-form" id="keyForm" hidden>
+    <label class="f" for="keyText">The full link</label>
+    <input id="keyText" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://…">
+    <div class="row">
+      <button class="big ghost" type="button" id="keyPaste">Paste</button>
+      <button class="big" type="submit" id="keyOpen">Open</button>
+    </div>
+    <p class="note warn" id="keyMsg" role="alert" hidden></p>
+  </form>
+  <div class="gate-screen" id="gateReload" hidden>
+    <h2>The page didn't load completely. Reload.</h2>
+    <button class="big" type="button" id="gateReloadBtn">Reload</button>
+  </div>
+  <div class="gate-screen" id="gateOffline" hidden>
+    <h2>You're offline and this page isn't saved on this phone yet.</h2>
+    <p class="sub">Connect to the internet, then try again.</p>
+    <button class="big" type="button" id="gateRetry">Try again</button>
+  </div>
+</section>
+
+<section class="check" id="check" aria-labelledby="checkH" hidden>
+  <h2 id="checkH">Check this phone</h2>
+  <p class="sub" id="checkNote" role="status">Running the checks…</p>
+  <ul class="checks" id="checkRows"></ul>
+  <div class="row">
+    <button class="big" type="button" id="checkCopy" disabled>Copy results</button>
+    <button class="big ghost" type="button" id="checkClose">Close</button>
+  </div>
+  <label class="f" id="checkTextWrap" hidden>Results (select all and copy)<textarea id="checkText" readonly rows="8"></textarea></label>
+</section>
+
+<div class="app" id="app" inert aria-busy="true">
+  <section class="work" aria-label="Photo">
+    <div class="photo-bar">
+      <button class="mini" type="button" id="undoBtn" aria-label="Undo" title="Undo" disabled>↶ Undo</button>
+      <button class="mini" type="button" id="redoBtn" aria-label="Redo" title="Redo" disabled>↷</button>
+      <button class="mini" type="button" id="zOut" aria-label="Zoom out">−</button>
+      <span class="zl" id="zLbl">100%</span>
+      <button class="mini" type="button" id="zIn" aria-label="Zoom in">+</button>
+      <button class="mini" type="button" id="zFit">Whole photo</button>
+    </div>
+    <div class="banner" id="banner" hidden><span id="bannerMsg"></span><button type="button" id="bannerBtn">Cancel</button></div>
+    <div class="viewport" id="viewport">
+      <div class="stage" id="stage">
+        <img class="photo" id="photo" alt="Arm photo">
+        <div class="art" id="art">
+          <div class="ink"><img id="artImg" alt="Tattoo design"></div>
+          <div class="box"></div>
+          <div class="stem"></div>
+          <div class="rot" data-rot title="Turn"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg></div>
+          <div class="h c" data-c="nw"></div><div class="h c" data-c="ne"></div><div class="h c" data-c="sw"></div><div class="h c" data-c="se"></div>
+          <div class="h e" data-c="w"></div><div class="h e" data-c="e"></div><div class="h n" data-c="n"></div><div class="h n" data-c="s"></div>
+        </div>
+        <svg class="mlayer" id="mlayer"></svg>
+        <canvas class="loupe" id="loupe" width="264" height="264" hidden></canvas>
+      </div>
+    </div>
+    <div class="thumbs" id="thumbs" role="group" aria-label="Your photos"></div>
+  </section>
+
+  <aside class="card">
+    <ol class="prog" aria-label="Steps">
+      <li><button type="button" data-go="1">1 · Photo</button></li>
+      <li><button type="button" data-go="2">2 · Size</button></li>
+      <li><button type="button" data-go="3">3 · Place</button></li>
+      <li><button type="button" data-go="4">4 · Save</button></li>
+    </ol>
+
+    <div class="step" data-step="1">
+      <h2>Add a photo of the arm</h2>
+      <p>Arm flat, phone held straight above it, good light. Lay a credit card or a dollar bill flat on the arm so the real size can be measured.</p>
+      <label class="big">Choose photo<input id="photoInput" type="file" accept="image/*" multiple></label>
+      <p class="sub" id="photoCount"></p>
+      <button class="big ghost" type="button" data-next>Next: set the size</button>
+    </div>
+
+    <div class="step" data-step="2" hidden>
+      <h2>Set the real size</h2>
+      <div id="sizeChoose">
+        <p>What is lying on the arm in this photo?</p>
+        <div class="choices" id="refChoices">
+          <button class="choice" type="button" data-len="3.370" data-what="the long side of the card" aria-pressed="true">Credit card<small>long side, 3.370"</small></button>
+          <button class="choice" type="button" data-len="6.14" data-what="the long side of the bill" aria-pressed="false">Dollar bill<small>long side, 6.14"</small></button>
+          <button class="choice" type="button" data-len="0.955" data-what="across the quarter" aria-pressed="false">Quarter<small>across, 0.955"</small></button>
+          <button class="choice" type="button" data-len="" data-what="the two marks you know" aria-pressed="false">Ruler or tape<small>type the length</small></button>
+        </div>
+        <label class="f" id="customWrap" hidden>Length between the two marks (inches, or like 1' 2-1/2")
+          <input id="calLen" type="text" inputmode="decimal" value="6" autocomplete="off">
+        </label>
+        <div class="note" id="calNote" style="margin-top:10px"></div>
+        <button class="big" type="button" id="calApply" style="margin-top:10px" hidden>Use this size</button>
+      </div>
+      <div id="sizeDone" hidden>
+        <div class="note ok" id="sizeDoneMsg"></div>
+        <button class="link" type="button" id="calReset">Measure it again</button>
+      </div>
+      <div class="nav" style="margin-top:6px">
+        <button class="big ghost" type="button" data-back>Back</button>
+        <button class="big" type="button" data-next id="sizeNext">Next: place it</button>
+      </div>
+      <button class="link" type="button" id="skipSize">Nothing to measure with in the photo? Skip this step</button>
+    </div>
+
+    <div class="step" data-step="3" hidden>
+      <h2>Put it on the arm</h2>
+      <p id="placeIntro">Tap the arm where the tattoo should go. It lines itself up with the arm.</p>
+      <button class="big" type="button" id="alignBtn">Tap the arm to line it up</button>
+      <ul class="legend" aria-label="How to adjust">
+        <li><span style="width:20px;text-align:center;color:var(--accent);font-size:18px">✥</span>Drag the design to move it</li>
+        <li><span class="sw" style="width:20px;height:20px;border-radius:50%"></span>Corner dots: bigger or smaller (keeps its shape)</li>
+        <li><span class="sw" style="width:10px;height:20px;border-radius:5px;margin:0 5px"></span>Side tabs: stretch only wider or only taller (zoom in with + if you don't see them)</li>
+        <li><span class="sw" style="width:20px;height:20px;border-radius:50%;background:var(--accent)"></span>Round dot on top: turn it</li>
+      </ul>
+      <div class="grid3">
+        <button class="tile" type="button" id="smaller"><span class="i">−</span>Smaller</button>
+        <button class="tile" type="button" id="bigger"><span class="i">+</span>Bigger</button>
+        <button class="tile" type="button" id="flip"><span class="i">⇋</span>Flip</button>
+        <button class="tile" type="button" id="turnL"><span class="i">↺</span>Turn left</button>
+        <button class="tile" type="button" id="turnR"><span class="i">↻</span>Turn right</button>
+        <button class="tile" type="button" id="undo2"><span class="i">↶</span>Undo</button>
+      </div>
+      <div class="note" id="sizeReadout"></div>
+      <div class="note warn" id="stretchNote" hidden>It is stretched out of shape. <button class="link" type="button" id="fixShape">Put it back in shape</button></div>
+      <div class="note warn" id="flipNote" hidden>Mirrored: the writing reads backwards. <button class="link" type="button" id="unflip">Flip it back</button></div>
+      <div class="nav">
+        <button class="big ghost" type="button" data-back>Back</button>
+        <button class="big" type="button" data-next>Next: save a picture</button>
+      </div>
+    </div>
+
+    <div class="step snap" data-step="4" hidden>
+      <h2>Save a picture</h2>
+      <button class="big" type="button" id="snapBtn">Make the picture</button>
+      <div id="snapOut" hidden>
+        <img id="snapImg" alt="The arm photo with the tattoo placed">
+        <button class="big ghost" type="button" id="dlPic" hidden>Save this picture</button>
+        <p class="sub" id="holdHint">Press and hold the picture (phone) or right-click it (computer) and choose Save.</p>
+      </div>
+      <div class="nav" style="margin-top:6px">
+        <button class="big ghost" type="button" data-back>Back</button>
+        <button class="big ghost" type="button" id="another">Try another photo</button>
+      </div>
+    </div>
+
+    <section class="files" id="files" aria-labelledby="filesH">
+      <h2 id="filesH">Files for the tattoo artist</h2>
+      <p class="sub" id="dlWait">Getting the save buttons ready…</p>
+      <div id="dlBox" hidden>
+        <p class="sub">Give the artist the <b>Design PDF</b> and the <b>Artist sheet PDF</b>. <span id="dlHow">A confirmation appears before each file is saved.</span></p>
+        <ul class="dl">
+          <li><button class="b" type="button" data-f="pdf">Design PDF</button><small>For printing. Prints 6 in wide at Actual size (100%).</small></li>
+          <li><button class="b" type="button" data-f="sheet">Artist sheet PDF</button><small>4 pages: notes for the artist, a true-size check, line thickness choices, a close-up.</small></li>
+          <li><button class="b" type="button" data-f="png">Design PNG</button><small>Picture file (600 dpi), if the artist wants an image.</small></li>
+          <li><button class="b" type="button" data-f="svg">Design SVG</button><small>Vector file for design software, only if the artist asks for one.</small></li>
+        </ul>
+        <details id="dlExtra">
+          <summary>Only if the artist asks</summary>
+          <ul class="dl">
+            <li><button class="b" type="button" data-f="stencil">Stencil line PDF</button><small id="noteStencil"></small></li>
+            <li><button class="b" type="button" data-f="orig">Original handwriting PNG</button><small id="noteOrig"></small></li>
+          </ul>
+          <p class="sub">For any other file the artist sheet mentions, ask the person who shared this page.</p>
+        </details>
+      </div>
+      <p class="note" id="dlCustom" hidden>These files are for the original design, so they are hidden while a different design is loaded. <button class="link" type="button" id="origArt">Use the original design again</button> (keeps your photos)</p>
+      <p class="note warn" id="dlBlocked" hidden></p>
+      <p class="note warn" id="dlNone" hidden></p>
+      <details class="guide" id="guide">
+        <summary>How it works at the tattoo shop</summary>
+        <h3>Which file to give the artist</h3>
+        <ol>
+          <li><b>Design PDF</b> and <b>Artist sheet PDF</b>. <span id="guideSheet"></span></li>
+          <li>Print at <b>Actual size (100%)</b>, not "Fit to page". To check the printer, print page 2 of the artist sheet the same way: its 6-inch bar must measure 6 inches.</li>
+          <li><b>Design PNG</b> if the artist wants a picture file. <b>Design SVG</b> only if they ask for a vector file.</li>
+          <li>The files are not mirrored. Do not flip them; the artist takes care of the stencil.</li>
+        </ol>
+        <h3>What happens at the shop</h3>
+        <ol>
+          <li><b>Consult.</b> Bring the artist sheet and a few pictures from this page. Size, placement, line thickness and which way the writing reads are settled with the artist.</li>
+          <li><b>Stencil.</b> The artist makes a stencil from the file, with a thermal stencil printer and stencil paper, or by tracing it by hand.</li>
+          <li><b>Placement.</b> The stencil is pressed onto the skin and leaves an outline. It can be wiped off and placed again until it is right. Look at it directly on the arm; a mirror shows writing backwards.</li>
+          <li><b>Tattoo.</b> The artist follows the outline.</li>
+          <li><b>Aftercare.</b> Follow the artist's instructions.</li>
+        </ol>
+        <p class="sub">Pictures from this page are previews. A flat photo cannot show how the design wraps around the arm.</p>
+      </details>
+    </section>
+
+    <details class="more" id="more">
+      <summary>More options</summary>
+      <div class="more-body">
+        <div class="group">
+          <h3>Exact size</h3>
+          <div class="row">
+            <label class="f">Width<span class="unit"><input id="wIn" type="number" step="0.05" min="0.25"><span>in</span></span></label>
+            <label class="f">Height<span class="unit"><input id="hIn" type="number" step="0.05" min="0.1"><span>in</span></span></label>
+          </div>
+          <div class="row" style="align-items:center">
+            <label class="chk"><input id="lock" type="checkbox" checked> Keep its shape</label>
+            <button class="b" id="trueSize" type="button">Real size</button>
+          </div>
+        </div>
+        <div class="group">
+          <h3>Exact position</h3>
+          <div class="row">
+            <label class="f">From left<span class="unit"><input id="xIn" type="number" step="0.1"><span>in</span></span></label>
+            <label class="f">From top<span class="unit"><input id="yIn" type="number" step="0.1"><span>in</span></span></label>
+            <label class="f">Turn<span class="unit"><input id="rDeg" type="number" step="1"><span>°</span></span></label>
+          </div>
+          <button class="b" id="center" type="button">Center it</button>
+        </div>
+        <div class="group">
+          <h3>Measure something</h3>
+          <button class="b" id="meaBtn" type="button">Measure on the photo</button>
+          <ul class="mlist" id="mlist"></ul>
+          <button class="b" id="meaClear" type="button">Clear all measurements</button>
+        </div>
+        <div class="group">
+          <h3>Look</h3>
+          <label class="f">Ink darkness <input id="opacity" type="range" min="0.2" max="1" step="0.05" value="0.9"></label>
+          <label class="chk"><input id="guides" type="checkbox" checked> Show dots and guide lines</label>
+          <label class="chk"><input id="snapOn" type="checkbox" checked> Pull onto the arm line while dragging</label>
+        </div>
+        <div class="group">
+          <h3>Photos and design</h3>
+          <div class="row">
+            <label class="b">Use a different design<input id="artInput" type="file" accept="image/*,.svg"></label>
+            <button class="b danger" id="removePhoto" type="button">Remove this photo</button>
+          </div>
+          <button class="b danger" id="startOver" type="button">Start over</button>
+          <p class="sub" id="saveNote">Photos and placements stay in this browser so you can come back later.</p>
+        </div>
+        <div class="group">
+          <h3>This phone</h3>
+          <button class="b" id="checkBtn" type="button">Check this phone</button>
+        </div>
+        <p class="sub">Keyboard: arrows move 1/16" (with <kbd>Shift</kbd> 1/4"), <kbd>[</kbd> <kbd>]</kbd> turn 1°, <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo. Hold <kbd>Alt</kbd> while dragging to skip the pull onto the arm line.</p>
+      </div>
+    </details>
+  </aside>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+</body>
+</html>
